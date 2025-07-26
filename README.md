@@ -1,1 +1,0 @@
-# senchin0.github.io
