@@ -1,0 +1,90 @@
+:root {
+    --primary-blue: #49b1f5;
+    --dark-black: #000;
+    --code-bg: #282c34;
+    --page-width: 210mm;
+    --page-height: 297mm;
+}
+
+* { box-sizing: border-box; border-radius: 0 !important; word-break: break-all; }
+
+body {
+    margin: 0;
+    background-color: #525659;
+    font-family: 'Segoe UI', 'PingFang SC', sans-serif;
+    font-size: 10pt; /* 严格对应 Word 10号字 */
+}
+
+/* 页面容器 */
+.page {
+    width: var(--page-width);
+    height: var(--page-height);
+    background: #fff;
+    margin: 20px auto;
+    padding: 20mm 18mm;
+    position: relative;
+    box-shadow: 0 0 10px rgba(0,0,0,0.5);
+    overflow: hidden;
+    page-break-after: always;
+    border: 1px solid var(--dark-black);
+}
+
+/* 封面特化 */
+.cover {
+    background: linear-gradient(to top, rgba(0,0,0,0.9), rgba(0,0,0,0.2)), 
+                url('https://images.unsplash.com/photo-1461749280684-dccba630e2f6?auto=format&fit=crop&w=1200&q=80');
+    background-size: cover;
+    color: white;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+}
+
+.cover h1 { font-size: 3.5rem; line-height: 1.1; margin: 0; }
+
+/* 标题样式 */
+h2 {
+    font-size: 1.6rem;
+    border-left: 10px solid var(--dark-black);
+    padding-left: 12px;
+    background: #f4f4f4;
+    margin: 20px 0;
+}
+
+/* 代码块 */
+.code-wrapper {
+    background: var(--code-bg);
+    color: #abb2bf;
+    display: flex;
+    border: 1px solid var(--dark-black);
+    font-family: 'Consolas', monospace;
+    font-size: 9pt;
+    margin: 15px 0;
+}
+
+.line-numbers {
+    background: #21252b;
+    color: #4b5263;
+    padding: 10px 8px;
+    text-align: right;
+    min-width: 35px;
+    border-right: 1px solid #3e4451;
+}
+
+.code-content { padding: 10px; white-space: pre-wrap; flex: 1; }
+
+/* 提示条 */
+.highlight-bar {
+    background: #fff3cd;
+    border: 1px solid #ffeeba;
+    padding: 10px;
+    margin: 15px 0;
+}
+
+/* 下载按钮 */
+.download-btn {
+    position: fixed; top: 20px; right: 20px; z-index: 1000;
+    background: var(--primary-blue); color: #fff;
+    padding: 10px 20px; text-decoration: none; font-weight: bold;
+    border: 2px solid #000; box-shadow: 3px 3px 0 #000;
+}
