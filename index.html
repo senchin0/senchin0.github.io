@@ -2,566 +2,368 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GitHub 仓库文件管理器</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>GitHub 文件管理器</title>
 <style>
-*{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',system-ui,sans-serif}
-body{background:#0d1117;color:#c9d1d9;display:flex;height:100vh}
-/* 登录面板 */
-#login-panel{position:fixed;inset:0;background:#161b22;display:flex;align-items:center;justify-content:center;z-index:100}
-.login-box{background:#0d1117;border:1px solid #30363d;border-radius:8px;padding:32px;width:380px}
-.login-box h2{margin-bottom:20px;color:#58a6ff}
-.login-box input{width:100%;padding:10px;margin:8px 0;background:#0d1117;border:1px solid #30363d;border-radius:6px;color:#c9d1d9}
-.login-box button{width:100%;padding:10px;margin-top:12px;background:#238636;color:#fff;border:none;border-radius:6px;cursor:pointer;font-weight:600}
-.login-box button:hover{background:#2ea043}
-/* 侧边栏目录树 */
-#sidebar{width:280px;background:#161b22;border-right:1px solid #30363d;overflow-y:auto;padding:12px}
-#sidebar h3{padding:8px;color:#8b949e;font-size:13px;text-transform:uppercase}
-.tree-item{padding:6px 8px;cursor:pointer;border-radius:4px;display:flex;align-items:center;gap:6px;font-size:14px}
-.tree-item:hover{background:#21262d}
-.tree-item.active{background:#1f6feb33;color:#58a6ff}
-.folder-icon{color:#d29922}
-.file-icon{color:#8b949e}
-/* 主内容区 */
-#main{flex:1;display:flex;flex-direction:column}
-#toolbar{padding:12px;background:#161b22;border-bottom:1px solid #30363d;display:flex;gap:8px;align-items:center}
-.btn{padding:6px 14px;background:#21262d;color:#c9d1d9;border:1px solid #30363d;border-radius:6px;cursor:pointer;font-size:13px}
-.btn:hover{background:#30363d}
-.btn-primary{background:#238636;border-color:#238636;color:#fff}
-.btn-primary:hover{background:#2ea043}
-.btn-danger{background:#da3633;border-color:#da3633;color:#fff}
-#path-bar{padding:8px 12px;background:#0d1117;border-bottom:1px solid #30363d;font-family:monospace;color:#8b949e;font-size:13px}
-#file-list{flex:1;overflow-y:auto;padding:8px}
-.file-row{display:flex;align-items:center;padding:8px 12px;border-radius:6px;cursor:pointer;gap:12px}
-.file-row:hover{background:#161b22}
-.file-row .name{flex:1}
-.file-row .size{color:#8b949e;font-size:12px;width:80px;text-align:right}
+*{margin:0;padding:0;box-sizing:border-box;font-family:system-ui,Segoe UI,sans-serif}
+body{background:#12141d;color:#e2e8f0;height:100vh;display:flex;overflow:hidden}
+/* 侧边目录树 */
+#sidebar{width:260px;background:#1a1d29;border-right:1px solid #2d303b;display:flex;flex-direction:column}
+.sidebar-head{padding:14px;border-bottom:1px solid #2d303b;font-weight:bold;color:#94a3b8;display:flex;justify-content:space-between;align-items:center}
+#tree-wrap{flex:1;overflow:auto;padding:8px}
+.tree-node{padding:5px 6px;margin:2px 0;border-radius:4px;cursor:pointer;font-size:14px;display:flex;align-items:center;gap:6px}
+.tree-node:hover{background:#272b38}
+.tree-node.active{background:#253452;color:#60a5fa}
+.tree-indent{margin-left:16px}
+.folder-icon{color:#facc15}
+.file-icon{color:#94a3b8}
+/* 主区域 */
+#main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+/* 顶部工具栏 */
+.toolbar{padding:10px 12px;background:#1a1d29;border-bottom:1px solid #2d303b;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.btn{padding:7px 12px;border-radius:5px;border:none;font-size:14px;cursor:pointer;background:#272b38;color:#e2e8f0;display:inline-flex;align-items:center;gap:4px}
+.btn:disabled{opacity:0.4;cursor:not-allowed}
+.btn-primary{background:#238636}
+.btn-danger{background:#b91c1c}
+.btn:hover{filter:brightness(1.1)}
+.breadcrumb{padding:8px 12px;background:#12141d;border-bottom:1px solid #2d303b;font-family:monospace;color:#94a3b8;font-size:13px}
+.breadcrumb a{color:#60a5fa;text-decoration:none;margin:0 4px}
+/* 文件列表 */
+.list-container{flex:1;overflow:auto}
+.table-head{display:grid;grid-template-columns:36px 1fr 90px;padding:8px 12px;background:#1a1d29;border-bottom:1px solid #2d303b;font-size:13px;color:#94a3b8}
+.file-row{display:grid;grid-template-columns:36px 1fr 90px;padding:10px 12px;border-bottom:1px solid #20232e;align-items:center;cursor:pointer}
+.file-row:hover{background:#1a1d29}
+.file-row.selected{background:#20293f}
+.file-name{display:flex;align-items:center;gap:8px}
+.file-size{text-align:right;color:#94a3b8;font-size:12px}
+.checkbox{width:18px;height:18px;cursor:pointer}
 /* 上传区域 */
-#drop-zone{border:2px dashed #30363d;border-radius:8px;padding:40px;text-align:center;margin:12px;color:#8b949e}
-#drop-zone.drag-over{border-color:#58a6ff;background:#1f6feb11}
-/* 模态框 */
-.modal{position:fixed;inset:0;background:#00000088;display:none;align-items:center;justify-content:center;z-index:50}
-.modal-box{background:#161b22;border:1px solid #30363d;border-radius:8px;padding:24px;min-width:320px}
-.modal-box h3{margin-bottom:16px}
-.modal-box input{width:100%;padding:8px;margin:8px 0;background:#0d1117;border:1px solid #30363d;border-radius:6px;color:#c9d1d9}
-.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
-#status-bar{padding:6px 12px;background:#161b22;border-top:1px solid #30363d;font-size:12px;color:#8b949e}
+.dropzone{margin:12px;border:2px dashed #2d303b;border-radius:6px;text-align:center;padding:30px;color:#64748b}
+.dropzone.drag{border-color:#60a5fa;background:rgba(96,165,250,0.08)}
+/* 弹窗 */
+.modal{position:fixed;inset:0;background:rgba(0,0,0,0.6);display:none;align-items:center;justify-content:center;z-index:99}
+.modal-box{background:#1a1d29;border:1px solid #2d303b;border-radius:8px;padding:20px;width:min(90%,400px)}
+.modal-box h4{margin-bottom:14px}
+.modal-box input{width:100%;padding:9px;border-radius:5px;background:#12141d;border:1px solid #2d303b;color:#fff;margin:8px 0}
+.modal-buttons{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
+/* 登录面板 */
+#login{position:fixed;inset:0;background:#12141d;display:flex;align-items:center;justify-content:center;z-index:100}
+.login-card{background:#1a1d29;border:1px solid #2d303b;padding:24px;border-radius:8px;width:min(92%,360px)}
+.login-card input{width:100%;padding:10px;margin:7px 0;background:#12141d;border:1px solid #2d303b;border-radius:6px;color:#fff}
+/* 底部状态栏 */
+.status-bar{padding:6px 12px;background:#1a1d29;border-top:1px solid #2d303b;font-size:12px;color:#94a3b8}
+/* 移动端侧边栏开关 */
+@media (max-width:768px){
+  #sidebar{position:absolute;z-index:9;width:260px;transform:translateX(-100%);transition:0.2s}
+  #sidebar.open{transform:translateX(0)}
+}
 </style>
 </head>
 <body>
-
-<!-- 登录面板 -->
-<div id="login-panel">
-  <div class="login-box">
-    <h2>🔐 仓库文件管理器登录</h2>
-    <input type="text" id="owner-input" placeholder="仓库所有者用户名 (如 UserB)">
-    <input type="text" id="repo-input" placeholder="仓库名 (如 blog-repo)">
-    <input type="password" id="token-input" placeholder="GitHub Personal Access Token">
-    <button onclick="login()">进入管理系统</button>
-    <p style="margin-top:12px;font-size:12px;color:#8b949e;text-align:center">
-      Token 仅保存在本地浏览器，不会上传
-    </p>
+<div id="login">
+  <div class="login-card">
+    <h3>🔐 仓库授权</h3>
+    <input placeholder="用户名(owner)" id="owner">
+    <input placeholder="仓库名(repo)" id="repo">
+    <input placeholder="Fine-grained Token" type="password" id="token">
+    <button class="btn btn-primary" style="width:100%;margin-top:8px" onclick="doLogin()">进入管理器</button>
   </div>
 </div>
 
-<!-- 侧边栏目录树 -->
-<div id="sidebar" style="display:none">
-  <h3>📁 目录树</h3>
-  <div id="tree-container"></div>
+<div id="sidebar">
+  <div class="sidebar-head">
+    <span>📁 目录树</span>
+    <button class="btn" onclick="toggleSidebar()" style="padding:3px 6px">≡</button>
+  </div>
+  <div id="tree-wrap"></div>
 </div>
 
-<!-- 主区域 -->
-<div id="main" style="display:none">
-  <div id="toolbar">
-    <button class="btn btn-primary" onclick="document.getElementById('file-input').click()">📤 上传文件</button>
-    <input type="file" id="file-input" style="display:none" multiple onchange="handleUpload(event)">
-    <button class="btn" onclick="showNewFolderModal()">📁 新建文件夹</button>
-    <button class="btn" onclick="refresh()">🔄 刷新</button>
-    <button class="btn" onclick="logout()" style="margin-left:auto">🚪 退出</button>
+<div id="main">
+  <div class="toolbar">
+    <button class="btn" id="btnBack" onclick="goParent()" disabled>⬆ 返回上级</button>
+    <button class="btn btn-primary" onclick="document.getElementById('fileInput').click()">📤 上传</button>
+    <input type="file" id="fileInput" multiple style="display:none" onchange="uploadFiles(this.files)">
+    <button class="btn" onclick="newFolder()">📂 新建文件夹</button>
+    <button class="btn" id="btnRename" disabled onclick="openRename()">✏️ 重命名</button>
+    <button class="btn" id="btnMove" disabled onclick="openMove()">➡️ 移动</button>
+    <button class="btn" id="btnCopy" disabled onclick="copySelected()">📋 复制</button>
+    <button class="btn btn-danger" id="btnDel" disabled onclick="batchDelete()">🗑️ 删除选中</button>
+    <button class="btn" onclick="refreshAll()">🔄 刷新</button>
+    <button class="btn" style="margin-left:auto" onclick="logout()">🚪退出</button>
   </div>
-  <div id="path-bar">/</div>
-  <div id="file-list">
-    <div id="drop-zone">
-      📂 拖拽文件到此处上传<br>
-      <span style="font-size:12px">支持图片、视频、代码等任意格式</span>
+  <div class="breadcrumb" id="breadcrumb"></div>
+  <div class="list-container">
+    <div class="table-head">
+      <input type="checkbox" class="checkbox" id="checkAll">
+      <div>文件名</div>
+      <div>大小</div>
+    </div>
+    <div id="fileList"></div>
+    <div class="dropzone" id="dropZone">拖拽文件到此上传</div>
+  </div>
+  <div class="status-bar" id="status">就绪</div>
+</div>
+
+<!-- 弹窗 -->
+<div class="modal" id="modalRename">
+  <div class="modal-box">
+    <h4>重命名 / 移动路径</h4>
+    <input id="renameInput">
+    <div class="modal-buttons">
+      <button class="btn" onclick="closeModal('modalRename')">取消</button>
+      <button class="btn btn-primary" onclick="submitRename()">确认</button>
     </div>
   </div>
-  <div id="status-bar">就绪</div>
 </div>
-
-<!-- 重命名模态框 -->
-<div class="modal" id="rename-modal">
+<div class="modal" id="modalFolder">
   <div class="modal-box">
-    <h3>重命名 / 移动</h3>
-    <p style="font-size:12px;color:#8b949e;margin-bottom:8px">输入新路径（含文件名）可移动到其他目录</p>
-    <input type="text" id="rename-input">
-    <div class="modal-actions">
-      <button class="btn" onclick="closeModal('rename-modal')">取消</button>
-      <button class="btn btn-primary" onclick="doRename()">确认</button>
-    </div>
-  </div>
-</div>
-
-<!-- 新建文件夹模态框 -->
-<div class="modal" id="folder-modal">
-  <div class="modal-box">
-    <h3>新建文件夹</h3>
-    <input type="text" id="folder-input" placeholder="文件夹名称">
-    <div class="modal-actions">
-      <button class="btn" onclick="closeModal('folder-modal')">取消</button>
-      <button class="btn btn-primary" onclick="createFolder()">创建</button>
+    <h4>新建文件夹</h4>
+    <input placeholder="文件夹名称" id="folderInput">
+    <div class="modal-buttons">
+      <button class="btn" onclick="closeModal('modalFolder')">取消</button>
+      <button class="btn btn-primary" onclick="submitFolder()">创建</button>
     </div>
   </div>
 </div>
 
 <script>
-let GITHUB_TOKEN = '';
-let REPO_OWNER = '';
-let REPO_NAME = '';
-let CURRENT_PATH = '';
-let SELECTED_FILE = null;
-let fileTree = {};
+let config = {token:'',owner:'',repo:''};
+let currentPath = '';
+let selectedItems = new Set();
+let treeData = {};
+let activeFile = null;
+const API = 'https://api.github.com';
 
-const API_BASE = 'https://api.github.com';
-
-// ========== 登录逻辑 ==========
-function login() {
-  REPO_OWNER = document.getElementById('owner-input').value.trim();
-  REPO_NAME = document.getElementById('repo-input').value.trim();
-  GITHUB_TOKEN = document.getElementById('token-input').value.trim();
-  
-  if (!REPO_OWNER || !REPO_NAME || !GITHUB_TOKEN) {
-    alert('请填写完整信息');
-    return;
+// 初始化读取本地存储
+window.onload = ()=>{
+  let save = JSON.parse(localStorage.getItem('gmCfg')||'{}');
+  if(save.token){
+    config = save;
+    document.getElementById('login').style.display = 'none';
+    renderTree();
+    loadDir('');
   }
-  
-  // 保存到 localStorage
-  localStorage.setItem('gm_owner', REPO_OWNER);
-  localStorage.setItem('gm_repo', REPO_NAME);
-  localStorage.setItem('gm_token', GITHUB_TOKEN);
-  
-  showApp();
-  loadTree();
-  loadDirectory('');
-}
-
-function logout() {
-  localStorage.removeItem('gm_token');
-  location.reload();
-}
-
-function showApp() {
-  document.getElementById('login-panel').style.display = 'none';
-  document.getElementById('sidebar').style.display = 'block';
-  document.getElementById('main').style.display = 'flex';
-}
-
-// 自动填充已保存的信息
-window.onload = () => {
-  const savedOwner = localStorage.getItem('gm_owner');
-  const savedRepo = localStorage.getItem('gm_repo');
-  const savedToken = localStorage.getItem('gm_token');
-  if (savedOwner) document.getElementById('owner-input').value = savedOwner;
-  if (savedRepo) document.getElementById('repo-input').value = savedRepo;
-  if (savedToken) document.getElementById('token-input').value = savedToken;
-  
-  // 拖拽上传
-  const dropZone = document.getElementById('drop-zone');
-  dropZone.addEventListener('dragover', e => {
-    e.preventDefault();
-    dropZone.classList.add('drag-over');
-  });
-  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
-  dropZone.addEventListener('drop', e => {
-    e.preventDefault();
-    dropZone.classList.remove('drag-over');
+  // 全选框
+  document.getElementById('checkAll').onchange = (e)=>{
+    let boxes = document.querySelectorAll('.rowCheck');
+    boxes.forEach(b=>b.checked = e.target.checked);
+    syncSelect();
+  };
+  // 拖拽
+  let dz = document.getElementById('dropZone');
+  dz.ondragover = e=>{e.preventDefault();dz.classList.add('drag')};
+  dz.ondragleave = ()=>dz.classList.remove('drag');
+  dz.ondrop = e=>{
+    e.preventDefault();dz.classList.remove('drag');
     uploadFiles(e.dataTransfer.files);
-  });
+  };
 };
 
-// ========== GitHub API 封装 ==========
-async function api(path, options = {}) {
-  const res = await fetch(`${API_BASE}/repos/${REPO_OWNER}/${REPO_NAME}/contents/${path}`, {
-    ...options,
-    headers: {
-      'Authorization': `Bearer ${GITHUB_TOKEN}`,
-      'Accept': 'application/vnd.github.v3+json',
-      ...options.headers
-    }
-  });
-  
-  if (res.status === 401) {
-    alert('Token 无效或已过期');
-    logout();
-    return null;
-  }
-  if (res.status === 404) return null;
-  if (!res.ok) {
-    const err = await res.json();
-    setStatus(`错误: ${err.message}`);
-    throw new Error(err.message);
-  }
-  return res.json();
+function doLogin(){
+  config.owner = document.getElementById('owner').value.trim();
+  config.repo = document.getElementById('repo').value.trim();
+  config.token = document.getElementById('token').value.trim();
+  if(!config.owner||!config.repo||!config.token)return alert('填写完整');
+  localStorage.setItem('gmCfg',JSON.stringify(config));
+  document.getElementById('login').style.display = 'none';
+  renderTree();
+  loadDir('');
+}
+function logout(){localStorage.removeItem('gmCfg');location.reload()}
+function setStatus(text){document.getElementById('status').innerText = text}
+async function api(path,opts={}){
+  let headers = {Authorization:`Bearer ${config.token}`,'Accept':'application/vnd.github.v3+json'};
+  let res = await fetch(`${API}/repos/${config.owner}/${config.repo}/contents/${path}`,{headers,...opts});
+  if(res.status===401){alert('Token无效');logout()}
+  if(res.status===404)return null;
+  let json = await res.json();
+  return json;
 }
 
-// ========== 目录树加载 ==========
-async function loadTree() {
-  setStatus('加载目录树中...');
-  try {
-    // 使用 git tree API 递归获取完整目录结构
-    const res = await fetch(`${API_BASE}/repos/${REPO_OWNER}/${REPO_NAME}/git/trees/main?recursive=1`, {
-      headers: { 'Authorization': `Bearer ${GITHUB_TOKEN}` }
-    });
-    const data = await res.json();
-    
-    fileTree = {};
-    if (data.tree) {
-      data.tree.forEach(item => {
-        const parts = item.path.split('/');
-        let current = fileTree;
-        parts.forEach((part, i) => {
-          if (!current[part]) {
-            current[part] = { _type: i === parts.length - 1 ? item.type : 'tree', _children: {} };
-          }
-          current = current[part]._children;
-        });
+// 左侧目录树
+async function renderTree(){
+  setStatus('加载目录树...');
+  try{
+    let res = await fetch(`${API}/repos/${config.owner}/${config.repo}/git/trees/main?recursive=1`,{headers:{Authorization:`Bearer ${config.token}`}});
+    let data = await res.json();
+    treeData = {};
+    data.tree.forEach(item=>{
+      let p = item.path.split('/');
+      let cur = treeData;
+      p.forEach((name,i)=>{
+        if(!cur[name]) cur[name]={type:item.type,children:{}};
+        cur = cur[name].children;
       });
-    }
-    renderTree();
-    setStatus('目录树加载完成');
-  } catch (e) {
-    setStatus('目录树加载失败: ' + e.message);
-  }
+    });
+    let wrap = document.getElementById('tree-wrap');
+    wrap.innerHTML = '';
+    drawTree(treeData,wrap,'');
+    setStatus('目录加载完成');
+  }catch(e){setStatus('目录树加载失败');}
 }
-
-function renderTree() {
-  const container = document.getElementById('tree-container');
-  container.innerHTML = '';
-  renderTreeNode(fileTree, container, '');
-}
-
-function renderTreeNode(node, parentEl, path) {
-  Object.keys(node).sort((a, b) => {
-    const aIsTree = node[a]._type === 'tree';
-    const bIsTree = node[b]._type === 'tree';
-    if (aIsTree && !bIsTree) return -1;
-    if (!aIsTree && bIsTree) return 1;
+function drawTree(obj,parent,basePath,level=0){
+  let keys = Object.keys(obj).sort((a,b)=>{
+    if(obj[a].type==='tree'&&obj[b].type!=='tree')return -1;
+    if(obj[a].type!=='tree'&&obj[b].type==='tree')return 1;
     return a.localeCompare(b);
-  }).forEach(name => {
-    const item = node[name];
-    const fullPath = path ? `${path}/${name}` : name;
-    
-    const div = document.createElement('div');
-    div.className = 'tree-item';
-    div.innerHTML = item._type === 'tree' 
-      ? '<span class="folder-icon">📁</span>' + name
-      : '<span class="file-icon">📄</span>' + name;
-    
-    if (item._type === 'tree') {
-      div.onclick = (e) => {
-        e.stopPropagation();
-        document.querySelectorAll('.tree-item').forEach(el => el.classList.remove('active'));
-        div.classList.add('active');
-        loadDirectory(fullPath);
-      };
-    }
-    
-    parentEl.appendChild(div);
-    
-    if (item._type === 'tree' && Object.keys(item._children).length > 0) {
-      const childContainer = document.createElement('div');
-      childContainer.style.paddingLeft = '16px';
-      parentEl.appendChild(childContainer);
-      renderTreeNode(item._children, childContainer, fullPath);
-    }
+  });
+  keys.forEach(name=>{
+    let fullPath = basePath?`${basePath}/${name}`:name;
+    let div = document.createElement('div');
+    div.className = 'tree-node';
+    div.style.paddingLeft = (level*12)+'px';
+    div.innerHTML = obj[name].type==='tree'?`<span class="folder-icon">📁</span>${name}`:`<span class="file-icon">📄</span>${name}`;
+    if(obj[name].type==='tree') div.onclick=()=>{document.querySelectorAll('.tree-node').forEach(n=>n.classList.remove('active'));div.classList.add('active');loadDir(fullPath)};
+    parent.appendChild(div);
+    if(obj[name].type==='tree') drawTree(obj[name].children,parent,fullPath,level+1);
   });
 }
 
-// ========== 目录内容加载 ==========
-async function loadDirectory(path) {
-  CURRENT_PATH = path;
-  document.getElementById('path-bar').textContent = '/' + path;
-  setStatus(`加载目录: ${path || '根目录'}`);
-  
-  try {
-    const data = await api(path || '') || [];
-    const listEl = document.getElementById('file-list');
-    
-    if (!Array.isArray(data)) {
-      // 是文件，预览
-      listEl.innerHTML = `<div style="padding:20px">
-        <h3>${data.name}</h3>
-        <p style="color:#8b949e;margin:8px 0">大小: ${formatSize(data.size)}</p>
-        <div style="display:flex;gap:8px;margin-top:16px">
-          <button class="btn" onclick="downloadFile('${data.path}')">下载</button>
-          <button class="btn" onclick="showRenameModal('${data.path}')">重命名/移动</button>
-          <button class="btn" onclick="copyFile('${data.path}')">复制</button>
-          <button class="btn btn-danger" onclick="deleteFile('${data.path}')">删除</button>
-        </div>
-      </div>`;
-      return;
-    }
-    
-    // 排序：文件夹在前
-    data.sort((a, b) => {
-      if (a.type === 'dir' && b.type !== 'dir') return -1;
-      if (a.type !== 'dir' && b.type === 'dir') return 1;
-      return a.name.localeCompare(b.name);
-    });
-    
-    let html = '';
-    // 返回上级
-    if (path) {
-      const parentPath = path.split('/').slice(0, -1).join('/');
-      html += `<div class="file-row" onclick="loadDirectory('${parentPath}')">
-        <span>⬆️</span><span class="name">.. 返回上级</span><span class="size"></span>
-      </div>`;
-    }
-    
-    data.forEach(item => {
-      const icon = item.type === 'dir' ? '📁' : '📄';
-      html += `<div class="file-row" onclick="${item.type === 'dir' ? `loadDirectory('${item.path}')` : `loadDirectory('${item.path}')`}">
-        <span>${icon}</span>
-        <span class="name">${item.name}</span>
-        <span class="size">${item.type === 'dir' ? '-' : formatSize(item.size)}</span>
-      </div>`;
-    });
-    
-    listEl.innerHTML = html + '<div id="drop-zone" style="margin-top:16px">📂 拖拽文件到此处上传</div>';
-    
-    // 重新绑定拖拽
-    const dropZone = document.getElementById('drop-zone');
-    dropZone.addEventListener('dragover', e => {
-      e.preventDefault();
-      dropZone.classList.add('drag-over');
-    });
-    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
-    dropZone.addEventListener('drop', e => {
-      e.preventDefault();
-      dropZone.classList.remove('drag-over');
-      uploadFiles(e.dataTransfer.files);
-    });
-    
-    setStatus(`共 ${data.length} 项`);
-  } catch (e) {
-    setStatus('加载失败: ' + e.message);
-  }
-}
+// 加载当前目录
+async function loadDir(path){
+  currentPath = path;
+  selectedItems.clear();syncSelect();
+  document.getElementById('checkAll').checked=false;
+  document.getElementById('btnBack').disabled = path==='';
+  // 面包屑
+  let bc = document.getElementById('breadcrumb');
+  let parts = path.split('/').filter(x=>x);
+  let bcHtml = `<a href="#" onclick="loadDir('')">/</a>`;
+  let tmp = '';
+  parts.forEach(p=>{tmp+=`/${p}`;bcHtml+=`<a href="#" onclick="loadDir('${tmp.slice(1)}')">${p}</a>/`});
+  bc.innerHTML = bcHtml;
 
-// ========== 文件上传 ==========
-function handleUpload(e) {
-  uploadFiles(e.target.files);
-  e.target.value = '';
-}
-
-async function uploadFiles(files) {
-  for (const file of files) {
-    await uploadSingleFile(file);
-  }
-  loadTree();
-  loadDirectory(CURRENT_PATH);
-}
-
-async function uploadSingleFile(file) {
-  const targetPath = CURRENT_PATH ? `${CURRENT_PATH}/${file.name}` : file.name;
-  setStatus(`正在上传: ${file.name}`);
-  
-  try {
-    // 读取文件并转 base64
-    const content = await fileToBase64(file);
-    
-    // 检查文件是否已存在
-    const existing = await api(targetPath);
-    const sha = existing ? existing.sha : undefined;
-    
-    await api(targetPath, {
-      method: 'PUT',
-      body: JSON.stringify({
-        message: `上传文件: ${file.name}`,
-        content: content,
-        sha: sha
-      })
-    });
-    
-    setStatus(`✓ ${file.name} 上传成功`);
-  } catch (e) {
-    setStatus(`✗ ${file.name} 上传失败: ${e.message}`);
-  }
-}
-
-function fileToBase64(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      // 去掉 data:application/...;base64, 前缀
-      const base64 = reader.result.split(',')[1];
-      resolve(base64);
+  setStatus(`读取目录: ${path||'根目录'}`);
+  let list = await api(path||'');
+  let listEl = document.getElementById('fileList');
+  listEl.innerHTML = '';
+  if(!Array.isArray(list))return;
+  list.sort((a,b)=>{
+    if(a.type==='dir'&&b.type!=='dir')return -1;
+    if(a.type!=='dir'&&b.type==='dir')return 1;
+    return a.name.localeCompare(b.name);
+  });
+  list.forEach(item=>{
+    let row = document.createElement('div');
+    row.className = 'file-row';
+    row.dataset.path = item.path;
+    let icon = item.type==='dir'?'📁':'📄';
+    row.innerHTML = `
+      <input type="checkbox" class="checkbox rowCheck">
+      <div class="file-name">${icon} ${item.name}</div>
+      <div class="file-size">${item.type==='dir'?'-':formatSize(item.size)}</div>
+    `;
+    row.querySelector('.rowCheck').onchange = (e)=>{
+      e.stopPropagation();
+      if(e.target.checked) selectedItems.add(item.path);
+      else selectedItems.delete(item.path);
+      syncSelect();
     };
-    reader.onerror = reject;
+    row.onclick=(e)=>{
+      if(e.target.classList.contains('rowCheck'))return;
+      activeFile = item.path;
+      document.querySelectorAll('.file-row').forEach(r=>r.classList.remove('selected'));
+      row.classList.add('selected');
+      syncSelect();
+      if(item.type==='dir') loadDir(item.path);
+    };
+    listEl.appendChild(row);
+  });
+}
+function syncSelect(){
+  let hasSel = selectedItems.size>0;
+  document.getElementById('btnRename').disabled = !hasSel||selectedItems.size>1;
+  document.getElementById('btnMove').disabled = !hasSel;
+  document.getElementById('btnCopy').disabled = !hasSel;
+  document.getElementById('btnDel').disabled = !hasSel;
+}
+function goParent(){
+  let arr = currentPath.split('/').filter(x=>x);
+  arr.pop();
+  loadDir(arr.join('/'));
+}
+function refreshAll(){renderTree();loadDir(currentPath)}
+
+// 上传文件
+async function uploadFiles(files){
+  for(let f of files){
+    await uploadOne(f);
+  }
+  renderTree();loadDir(currentPath);
+}
+async function uploadOne(file){
+  let p = currentPath?`${currentPath}/${file.name}`:file.name;
+  setStatus(`上传: ${file.name}`);
+  let reader = new FileReader();
+  let b64 = await new Promise(res=>{
+    reader.onload=e=>res(e.target.result.split(',')[1]);
     reader.readAsDataURL(file);
   });
+  let exist = await api(p);
+  await api(p,{method:'PUT',body:JSON.stringify({message:`上传 ${file.name}`,content:b64,sha:exist?.sha})});
+  setStatus(`${file.name} 上传完成`);
 }
 
-// ========== 文件删除 ==========
-async function deleteFile(path) {
-  if (!confirm(`确定删除 ${path} ?`)) return;
-  
-  try {
-    const fileInfo = await api(path);
-    if (!fileInfo) return;
-    
-    await api(path, {
-      method: 'DELETE',
-      body: JSON.stringify({
-        message: `删除文件: ${path.split('/').pop()}`,
-        sha: fileInfo.sha
-      })
-    });
-    
-    setStatus('✓ 删除成功');
-    loadTree();
-    loadDirectory(CURRENT_PATH);
-  } catch (e) {
-    setStatus('删除失败: ' + e.message);
+// 新建文件夹
+function newFolder(){
+  document.getElementById('folderInput').value='';
+  document.getElementById('modalFolder').style.display='flex';
+}
+async function submitFolder(){
+  let name = document.getElementById('folderInput').value.trim();
+  if(!name)return;
+  let p = currentPath?`${currentPath}/${name}/.gitkeep`:`${name}/.gitkeep`;
+  await api(p,{method:'PUT',body:JSON.stringify({message:`新建文件夹 ${name}`,content:btoa('')})});
+  closeModal('modalFolder');
+  renderTree();loadDir(currentPath);
+}
+
+// 重命名移动
+function openRename(){
+  document.getElementById('renameInput').value = activeFile;
+  document.getElementById('modalRename').style.display='flex';
+}
+function openMove(){
+  document.getElementById('renameInput').value = activeFile;
+  document.getElementById('modalRename').style.display='flex';
+}
+async function submitRename(){
+  let newPath = document.getElementById('renameInput').value.trim();
+  let old = activeFile;
+  let data = await api(old);
+  await api(newPath,{method:'PUT',body:JSON.stringify({message:`移动 ${old} → ${newPath}`,content:data.content})});
+  await api(old,{method:'DELETE',body:JSON.stringify({message:'删除原文件',sha:data.sha})});
+  closeModal('modalRename');
+  renderTree();loadDir(currentPath);
+}
+
+// 复制选中
+async function copySelected(){
+  for(let p of selectedItems){
+    let data = await api(p);
+    let newP = p+'.copy';
+    await api(newP,{method:'PUT',body:JSON.stringify({message:`复制 ${p}`,content:data.content})});
   }
+  renderTree();loadDir(currentPath);
 }
 
-// ========== 重命名 / 移动 ==========
-function showRenameModal(path) {
-  SELECTED_FILE = path;
-  document.getElementById('rename-input').value = path;
-  document.getElementById('rename-modal').style.display = 'flex';
-}
-
-async function doRename() {
-  const newPath = document.getElementById('rename-input').value.trim();
-  if (!newPath || newPath === SELECTED_FILE) {
-    closeModal('rename-modal');
-    return;
+// 批量删除
+async function batchDelete(){
+  if(!confirm('确定删除选中文件？'))return;
+  for(let p of selectedItems){
+    let f = await api(p);
+    await api(p,{method:'DELETE',body:JSON.stringify({message:'批量删除',sha:f.sha})});
   }
-  
-  try {
-    setStatus('正在移动文件...');
-    // 读取原文件
-    const oldFile = await api(SELECTED_FILE);
-    if (!oldFile) return;
-    
-    // 写入新路径
-    await api(newPath, {
-      method: 'PUT',
-      body: JSON.stringify({
-        message: `移动: ${SELECTED_FILE} → ${newPath}`,
-        content: oldFile.content
-      })
-    });
-    
-    // 删除原文件
-    await api(SELECTED_FILE, {
-      method: 'DELETE',
-      body: JSON.stringify({
-        message: `删除原文件: ${SELECTED_FILE}`,
-        sha: oldFile.sha
-      })
-    });
-    
-    setStatus('✓ 移动成功');
-    closeModal('rename-modal');
-    loadTree();
-    loadDirectory(CURRENT_PATH);
-  } catch (e) {
-    setStatus('移动失败: ' + e.message);
-  }
+  renderTree();loadDir(currentPath);
 }
 
-// ========== 复制文件 ==========
-async function copyFile(path) {
-  const newName = prompt('输入新文件路径（复制到）', path + '.copy');
-  if (!newName) return;
-  
-  try {
-    setStatus('正在复制...');
-    const oldFile = await api(path);
-    if (!oldFile) return;
-    
-    await api(newName, {
-      method: 'PUT',
-      body: JSON.stringify({
-        message: `复制: ${path} → ${newName}`,
-        content: oldFile.content
-      })
-    });
-    
-    setStatus('✓ 复制成功');
-    loadTree();
-    loadDirectory(CURRENT_PATH);
-  } catch (e) {
-    setStatus('复制失败: ' + e.message);
-  }
+function closeModal(id){document.getElementById(id).style.display='none'}
+function formatSize(b){
+  if(b<1024)return b+'B';
+  if(b<1048576)return (b/1024).toFixed(1)+'KB';
+  return (b/1048576).toFixed(1)+'MB';
 }
-
-// ========== 新建文件夹 ==========
-function showNewFolderModal() {
-  document.getElementById('folder-input').value = '';
-  document.getElementById('folder-modal').style.display = 'flex';
-}
-
-async function createFolder() {
-  const name = document.getElementById('folder-input').value.trim();
-  if (!name) return;
-  
-  // GitHub 不能直接创建空文件夹，创建一个 .gitkeep 占位文件
-  const folderPath = CURRENT_PATH ? `${CURRENT_PATH}/${name}/.gitkeep` : `${name}/.gitkeep`;
-  
-  try {
-    await api(folderPath, {
-      method: 'PUT',
-      body: JSON.stringify({
-        message: `创建文件夹: ${name}`,
-        content: btoa('')
-      })
-    });
-    
-    setStatus('✓ 文件夹创建成功');
-    closeModal('folder-modal');
-    loadTree();
-    loadDirectory(CURRENT_PATH);
-  } catch (e) {
-    setStatus('创建失败: ' + e.message);
-  }
-}
-
-// ========== 下载文件 ==========
-function downloadFile(path) {
-  window.open(`https://raw.githubusercontent.com/${REPO_OWNER}/${REPO_NAME}/main/${path}`);
-}
-
-// ========== 工具函数 ==========
-function formatSize(bytes) {
-  if (bytes < 1024) return bytes + ' B';
-  if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
-  if (bytes < 1073741824) return (bytes / 1048576).toFixed(1) + ' MB';
-  return (bytes / 1073741824).toFixed(2) + ' GB';
-}
-
-function setStatus(msg) {
-  document.getElementById('status-bar').textContent = msg;
-}
-
-function refresh() {
-  loadTree();
-  loadDirectory(CURRENT_PATH);
-}
-
-function closeModal(id) {
-  document.getElementById(id).style.display = 'none';
-}
-
-// 点击模态框背景关闭
-document.querySelectorAll('.modal').forEach(modal => {
-  modal.addEventListener('click', e => {
-    if (e.target === modal) modal.style.display = 'none';
-  });
-});
+function toggleSidebar(){document.getElementById('sidebar').classList.toggle('open')}
 </script>
 </body>
 </html>
